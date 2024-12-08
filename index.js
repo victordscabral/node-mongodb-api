@@ -10,7 +10,7 @@ app.use(express.json());
 
 // Rota para verificar grafia
 app.get('/check-word', async (req, res) => {
-  const { produto } = req.query; // Captura a variável "produto"
+  const { produto } = req.query; // Captura a variável "produtoo"
 
   if (!produto) {
     return res.status(400).json({ error: 'Parâmetro "produto" é obrigatório' });
