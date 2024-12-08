@@ -8,20 +8,20 @@ const PORT = process.env.PORT || 8080;
 // Middleware
 app.use(express.json());
 
-// Rota de teste para verificar grafia
+// Rota para verificar grafia
 app.get('/check-word', async (req, res) => {
-  const { produto } = req.query; // Captura a variável "produto" do Landbot
+  const { produto } = req.query; // Captura a variável "produto"
 
   if (!produto) {
     return res.status(400).json({ error: 'Parâmetro "produto" é obrigatório' });
   }
 
   try {
-    // Requisição para a API do ChatGPT
+    // Requisição à API do OpenAI
     const response = await axios.post(
       'https://api.openai.com/v1/chat/completions',
       {
-        model: 'gpt-3.5-turbo', // Escolha o modelo apropriado
+        model: 'gpt-3.5-turbo', // Substitua pelo modelo correto caso necessário
         messages: [
           {
             role: 'system',
@@ -36,12 +36,11 @@ app.get('/check-word', async (req, res) => {
       {
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${process.env.OPENAI_API_KEY}`, // Chave da API do OpenAI
+          Authorization: `Bearer ${process.env.OPENAI_API_KEY}`, // Certifique-se de usar a chave do ambiente
         },
       }
     );
 
-    // Extrair a resposta do ChatGPT
     const answer = response.data.choices[0].message.content.trim();
 
     res.json({
@@ -49,16 +48,16 @@ app.get('/check-word', async (req, res) => {
       correct: answer,
     });
   } catch (error) {
-    console.error('Erro ao acessar a API do ChatGPT:', error.message);
+    console.error('Erro ao acessar a API do ChatGPT:', error.response?.data || error.message);
     res.status(500).json({
-      error: 'Erro ao verificar a palavra. Tente novamente.',
+      error: 'Erro ao verificar a palavra. Verifique sua chave de API ou o formato da requisição.',
     });
   }
 });
 
-// Rota principal para verificar se o servidor está rodando
+// Rota de teste para garantir que o servidor está rodando
 app.get('/', (req, res) => {
-  res.send('Servidor está funcionando!');
+  res.send('Servidor está funcionando e pronto para receber requisições!');
 });
 
 // Start do servidor
