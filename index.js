@@ -3,64 +3,66 @@ const axios = require('axios');
 require('dotenv').config();
 
 const app = express();
-const PORT = process.env.PORT || 8080;
+const port = 3000;
 
-// Middleware
-app.use(express.json());
+app.use(express.json()); // Middleware para tratar JSON
 
-// Rota para verificar grafia
-app.get('/check-word', async (req, res) => {
-  const { produto } = req.query; // Captura a variável "produto"
-
-  if (!produto) {
-    return res.status(400).json({ error: 'Parâmetro "produto" é obrigatório' });
-  }
-
+// Função para verificar a grafia da palavra com a API da OpenAI
+async function verificarGrafia(palavra) {
   try {
-    // Requisição à API do OpenAI
+    const prompt = `Verifique se a palavra '${palavra}' está grafada corretamente. Caso contrário, forneça a correção.`;
+
     const response = await axios.post(
       'https://api.openai.com/v1/chat/completions',
       {
-        model: 'gpt-3.5-turbo', // Substitua pelo modelo correto caso necessário
+        model: 'gpt-3.5-turbo',  // ou o modelo que você preferir
         messages: [
           {
-            role: 'system',
-            content: 'Você é um assistente de verificação de ortografia.',
-          },
-          {
             role: 'user',
-            content: `A palavra "${produto}" está escrita corretamente?`,
+            content: prompt,
           },
         ],
+        max_tokens: 50,
+        temperature: 0,
       },
       {
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${process.env.OPENAI_API_KEY}`, // Certifique-se de usar a chave do ambiente
+          'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
         },
       }
     );
 
-    const answer = response.data.choices[0].message.content.trim();
+    const textoResposta = response.data.choices[0].message.content.trim();
 
-    res.json({
-      produto,
-      correct: answer,
-    });
+    // Verificando se a palavra está correta
+    if (textoResposta.toLowerCase().includes('errada') || textoResposta.toLowerCase().includes('não está correta')) {
+      return { message: `A palavra '${palavra}' está incorreta.` };
+    } else {
+      return { message: `A palavra '${palavra}' está correta.` };
+    }
   } catch (error) {
-    console.error('Erro ao acessar a API do ChatGPT:', error.response?.data || error.message);
-    res.status(500).json({
-      error: 'Erro ao verificar a palavra. Verifique sua chave de API ou o formato da requisição.',
-    });
+    console.error('Erro ao verificar grafia:', error);
+    return { message: 'Erro ao verificar a palavra.' };
+  }
+}
+
+// Rota do Express para verificar a grafia de uma palavra
+app.post('/verificar', async (req, res) => {
+  const { palavra } = req.body; // Recebe a palavra da requisição
+  if (!palavra) {
+    return res.status(400).json({ message: 'Por favor, forneça uma palavra para verificação.' });
+  }
+
+  try {
+    const resultado = await verificarGrafia(palavra);
+    return res.json(resultado);
+  } catch (error) {
+    return res.status(500).json({ message: 'Erro ao processar a verificação.' });
   }
 });
 
-// Rota de teste para garantir que o servidor está rodando
-app.get('/', (req, res) => {
-  res.send('Servidor está funcionando e pronto para receber requisições!');
-});
-
-// Start do servidor
-app.listen(PORT, () => {
-  console.log(`Servidor rodando na porta ${PORT}`);
+// Iniciar o servidor Express
+app.listen(port, () => {
+  console.log(`Servidor rodando na porta ${port}`);
 });
