@@ -8,20 +8,20 @@ const PORT = process.env.PORT || 8080;
 // Middleware
 app.use(express.json());
 
-// Rota para verificar grafia
+// Rota de teste para verificar grafia
 app.get('/check-word', async (req, res) => {
-  const { produto } = req.query; // Captura a variável "produtoo"
+  const { produto } = req.query; // Captura a variável "produto" do Landbot
 
   if (!produto) {
     return res.status(400).json({ error: 'Parâmetro "produto" é obrigatório' });
   }
 
   try {
-    // Requisição à API do OpenAI
+    // Requisição para a API do ChatGPT
     const response = await axios.post(
       'https://api.openai.com/v1/chat/completions',
       {
-        model: 'gpt-3.5-turbo', // Substitua pelo modelo correto caso necessário
+        model: 'gpt-3.5-turbo', // Escolha o modelo apropriado
         messages: [
           {
             role: 'system',
@@ -36,11 +36,12 @@ app.get('/check-word', async (req, res) => {
       {
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${process.env.OPENAI_API_KEY}`, // Certifique-se de usar a chave do ambiente
+          Authorization: `Bearer ${process.env.OPENAI_API_KEY}`, // Chave da API do OpenAI
         },
       }
     );
 
+    // Extrair a resposta do ChatGPT
     const answer = response.data.choices[0].message.content.trim();
 
     res.json({
@@ -48,16 +49,16 @@ app.get('/check-word', async (req, res) => {
       correct: answer,
     });
   } catch (error) {
-    console.error('Erro ao acessar a API do ChatGPT:', error.response?.data || error.message);
+    console.error('Erro completo:', error.response?.data || error.message);
     res.status(500).json({
-      error: 'Erro ao verificar a palavra. Verifique sua chave de API ou o formato da requisição.',
+      error: 'Erro ao verificar a palavra. Detalhes registrados no servidor.',
     });
-  }
+  }  
 });
 
-// Rota de teste para garantir que o servidor está rodando
+// Rota principal para verificar se o servidor está rodando
 app.get('/', (req, res) => {
-  res.send('Servidor está funcionando e pronto para receber requisições!');
+  res.send('Servidor está funcionando!');
 });
 
 // Start do servidor
